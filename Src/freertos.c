@@ -102,13 +102,14 @@ uint32_t cur_frame = 0;
 
 uint32_t							DmaRecHalfBuffCplt  = 0;
 uint32_t    						DmaRecBuffCplt      = 0;
-extern AUDIO_DrvTypeDef					*audio_drv;
 
+extern DFSDM_Filter_HandleTypeDef 	hdfsdm1_filter0;
 extern SAI_HandleTypeDef 			hsai_BlockA1;
+AUDIO_DrvTypeDef					*audio_drv;
 
-extern SpeexBits bits;/* Holds bits so they can be read and written by the Speex routines */
-extern void *enc_state;
-extern void *dec_state;
+SpeexBits bits;/* Holds bits so they can be read and written by the Speex routines */
+void *enc_state, *dec_state;/* Holds the states of the encoder & the decoder */
+int quality = 4, complexity=1, vbr=0, enh=1;/* SPEEX PARAMETERS, MUST REMAINED UNCHANGED */
 
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
@@ -116,6 +117,17 @@ osThreadId decodeTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+
+static void speex_init(void) {
+	speex_bits_init(&bits);
+	enc_state = speex_encoder_init(&speex_nb_mode);
+	speex_encoder_ctl(enc_state, SPEEX_SET_VBR, &vbr);
+	speex_encoder_ctl(enc_state, SPEEX_SET_QUALITY,&quality);
+	speex_encoder_ctl(enc_state, SPEEX_SET_COMPLEXITY, &complexity);
+	/* speex decoding intilalization */
+	dec_state = speex_decoder_init(&speex_nb_mode);
+	speex_decoder_ctl(dec_state, SPEEX_SET_ENH, &enh);
+}
 
 static void play(void) {
 	uint8_t buf_num = 0;
@@ -203,7 +215,16 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
 
   uint32_t i;
-  uint8_t buf_num = 0;
+
+  speex_init();
+
+  if(CS43L22_ID != cs43l22_drv.ReadID(AUDIO_I2C_ADDRESS))  {Error_Handler();}
+  audio_drv = &cs43l22_drv;
+  audio_drv->Reset(AUDIO_I2C_ADDRESS);
+  if(0 != audio_drv->Init(AUDIO_I2C_ADDRESS, OUTPUT_DEVICE_HEADPHONE, 50, AUDIO_FREQUENCY_8K)) { Error_Handler();}
+
+  HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, (int32_t*)&RecBuf[0][0], FRAME_SIZE*2);
+
   for(;;)
   {
 	  	  if(DmaRecHalfBuffCplt == 1) {
