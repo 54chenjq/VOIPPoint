@@ -57,6 +57,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
 
+#include <speex/speex.h>
+#include "wav_example.h"
 #include "cs43l22.h"
 #include "stm32l476g_discovery.h"
 
@@ -70,6 +72,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+#define FRAME_SIZE              160
+#define ENCODED_FRAME_SIZE      20
 #define SaturaLH(N, L, H) (((N)<(L))?(L):(((N)>(H))?(H):(N)))
 
 /* USER CODE END PD */
@@ -82,27 +86,66 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
-int32_t								RecBuff[2048];
-int16_t                      		PlayBuff[4096];
-extern DFSDM_Filter_HandleTypeDef 	hdfsdm1_filter0;;
-extern SAI_HandleTypeDef 			hsai_BlockA1;
+unsigned char micr_gain = 50;
+
+#define BUF_LENGTH	3
+
+int32_t		RecBuf[2][FRAME_SIZE];
+int16_t		micr_data[2][FRAME_SIZE];
+int16_t		PlayBuf[BUF_LENGTH][FRAME_SIZE*2];
+char microphone_encoded_data[2][ENCODED_FRAME_SIZE];
+unsigned char encoded_micr_ready_buf_num = 0;
+int16_t	audio_stream[FRAME_SIZE];
+uint32_t	wav_pos = 0;
+uint32_t frame_num = 0;
+uint32_t cur_frame = 0;
+
 uint32_t							DmaRecHalfBuffCplt  = 0;
 uint32_t    						DmaRecBuffCplt      = 0;
-AUDIO_DrvTypeDef					*audio_drv;
-unsigned char micr_gain = 40;
+extern AUDIO_DrvTypeDef					*audio_drv;
+
+extern SAI_HandleTypeDef 			hsai_BlockA1;
+
+extern SpeexBits bits;/* Holds bits so they can be read and written by the Speex routines */
+extern void *enc_state;
+extern void *dec_state;
 
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
+osThreadId decodeTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
-void HAL_DFSDM_FilterRegConvHalfCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter);
-void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter);
+static void play(void) {
+	uint8_t buf_num = 0;
+	if(frame_num>=1) {
+		if(frame_num-cur_frame!=1) {
+			HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin);
+			cur_frame = frame_num-1;
+		}
+		buf_num = cur_frame%BUF_LENGTH;
+		audio_drv->Play(AUDIO_I2C_ADDRESS, (uint16_t *) &PlayBuf[buf_num][0], FRAME_SIZE*2);
+		HAL_SAI_Transmit_DMA(&hsai_BlockA1, (uint8_t *) &PlayBuf[buf_num][0], FRAME_SIZE*2);
+		cur_frame++;
+    }
+}
+
+static void encode_frame(int16_t *input, char *output) {
+	speex_bits_reset(&bits);
+	speex_encode_int(enc_state,input,&bits);
+	speex_bits_write(&bits, output, ENCODED_FRAME_SIZE);
+}
+
+static void decode_frame(char *input, int16_t *output) {
+	speex_bits_read_from(&bits, input, ENCODED_FRAME_SIZE);
+	speex_decode_int(dec_state, &bits, output);
+}
    
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
+void StartDecodeTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -130,8 +173,12 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
+  /* definition and creation of decodeTask */
+  osThreadDef(decodeTask, StartDecodeTask, osPriorityIdle, 0, 512);
+  decodeTaskHandle = osThreadCreate(osThread(decodeTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -153,54 +200,78 @@ void StartDefaultTask(void const * argument)
 {
 
   /* USER CODE BEGIN StartDefaultTask */
-
-  uint32_t i;
-
-  if(CS43L22_ID != cs43l22_drv.ReadID(AUDIO_I2C_ADDRESS))
-  {
-      Error_Handler();
-  }
-  audio_drv = &cs43l22_drv;
-  audio_drv->Reset(AUDIO_I2C_ADDRESS);
-  if(0 != audio_drv->Init(AUDIO_I2C_ADDRESS, OUTPUT_DEVICE_HEADPHONE, 90, AUDIO_FREQUENCY_8K))
-  {
-	  Error_Handler();
-  }
-
-  HAL_DFSDM_FilterRegularStart_DMA(&hdfsdm1_filter0, RecBuff, 2048);
-
   /* Infinite loop */
 
+  uint32_t i;
+  uint8_t buf_num = 0;
   for(;;)
   {
-	  if(DmaRecHalfBuffCplt == 1)
-	  {
-		  for(i = 0; i < 1024; i++)
-		  {
-			  PlayBuff[2*i]     = SaturaLH((RecBuff[i] >>8), -32768, 32767)*(int32_t)micr_gain/100;
-			  PlayBuff[(2*i)+1] = PlayBuff[2*i];
-		  }
-		  audio_drv->Play(AUDIO_I2C_ADDRESS, (uint16_t *) &PlayBuff[0], 4096);
-		  HAL_SAI_Transmit_DMA(&hsai_BlockA1, (uint8_t *) &PlayBuff[0], 4096);
-		  DmaRecHalfBuffCplt  = 0;
-	  }
-	  if(DmaRecBuffCplt == 1)
-	  {
-		  for(i = 1024; i < 2048; i++)
-		  {
-			  PlayBuff[2*i]     = SaturaLH((RecBuff[i] >> 8), -32768, 32767)*(int32_t)micr_gain/100;
-			  PlayBuff[(2*i)+1] = PlayBuff[2*i];
-		  }
-		  DmaRecBuffCplt  = 0;
-	  }
-	  osDelay(1);
+	  	  if(DmaRecHalfBuffCplt == 1) {
+	  		  //for(i=0;i<FRAME_SIZE;i++) {micr_data[0][i] = SaturaLH((RecBuf[0][i] >>8), -32768, 32767)*(int32_t)micr_gain/100;}
+	  		  for(i=0;i<FRAME_SIZE;i++) {
+	  			  micr_data[0][i] = (int16_t)((uint16_t)wav_ex[wav_pos]<<8 | wav_ex[wav_pos+1])*(int32_t)micr_gain/100;
+	  			  wav_pos+=2;if(wav_pos>=EX_SIZE) wav_pos=0;
+	  		  }
+
+	  		  encode_frame(&micr_data[0][0],&microphone_encoded_data[0][0]);
+	  		  encoded_micr_ready_buf_num = 1;
+
+	  		  DmaRecHalfBuffCplt  = 0;
+	  		  play();
+
+	  	  }
+	  	  if(DmaRecBuffCplt == 1)
+	  	  {
+	  		  //for(i=0;i<FRAME_SIZE;i++) {micr_data[1][i] = SaturaLH((RecBuf[1][i] >>8), -32768, 32767)*(int32_t)micr_gain/100;}
+	  		  for(i=0;i<FRAME_SIZE;i++) {
+	  			  micr_data[1][i] = (int16_t)((uint16_t)wav_ex[wav_pos]<<8 | wav_ex[wav_pos+1])*(int32_t)micr_gain/100;
+	  			  wav_pos+=2;if(wav_pos>=EX_SIZE) wav_pos=0;
+	  		  }
+
+	  		  encode_frame(&micr_data[1][0],&microphone_encoded_data[1][0]);
+	  		  encoded_micr_ready_buf_num = 2;
+
+	  		  DmaRecBuffCplt  = 0;
+	  		  play();
+	  	  }
+	  	  osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
 }
 
+/* USER CODE BEGIN Header_StartDecodeTask */
+/**
+* @brief Function implementing the decodeTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartDecodeTask */
+void StartDecodeTask(void const * argument)
+{
+  /* USER CODE BEGIN StartDecodeTask */
+  /* Infinite loop */
+	uint32_t i;
+	  uint8_t buf_num = 0;
+  for(;;)
+  {
+	  if(encoded_micr_ready_buf_num) {
+		  decode_frame(&microphone_encoded_data[encoded_micr_ready_buf_num-1][0],&audio_stream[0]);
+		  encoded_micr_ready_buf_num=0;
+		  buf_num = frame_num%BUF_LENGTH;
+		  for(i=0;i<FRAME_SIZE;i++) {
+			  PlayBuf[buf_num][2*(FRAME_SIZE-1-i)] = audio_stream[FRAME_SIZE-1-i];
+			  PlayBuf[buf_num][2*(FRAME_SIZE-1-i)+1] = PlayBuf[buf_num][2*(FRAME_SIZE-1-i)];
+		  }
+		  frame_num++;
+
+	  }
+    osDelay(1);
+  }
+  /* USER CODE END StartDecodeTask */
+}
+
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
 
 void HAL_DFSDM_FilterRegConvHalfCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter)
 {
@@ -210,7 +281,7 @@ void HAL_DFSDM_FilterRegConvHalfCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_
 void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter)
 {
   DmaRecBuffCplt = 1;
-  HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin);
+  //HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin);
 }
      
 /* USER CODE END Application */

@@ -41,17 +41,22 @@
 									<listOptionValue builtIn="false" value="../Inc" />
 									<listOptionValue builtIn="false" value="../Drivers/STM32L4xx_HAL_Driver/Inc" />
 									<listOptionValue builtIn="false" value="../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy" />
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include" />
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS" />
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F" />
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32L4xx/Include" />
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include" />
-								</option>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/include}&quot;" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/libspeex}&quot;" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/STM32}&quot;" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/STM32/include}&quot;" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/STM32/libspeex}&quot;" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/STM32/libspeex/gcc}&quot;" />
+									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include" />
+								<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS" /></option>
 								<option id="com.atollic.truestudio.gcc.symbols.defined.1670122205" name="Defined symbols" superClass="com.atollic.truestudio.gcc.symbols.defined" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__weak=__attribute__((weak))" />
 									<listOptionValue builtIn="false" value="__packed=__attribute__((__packed__))" />
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32L476xx" />
+									<listOptionValue builtIn="false" value="HAVE_CONFIG_H" />
 								</option>
 								<option id="com.atollic.truestudio.common_options.target.endianess.1854274048" name="Endianess" superClass="com.atollic.truestudio.common_options.target.endianess" value="com.atollic.truestudio.common_options.target.endianess.little" valueType="enumerated" />
 								<option id="com.atollic.truestudio.common_options.target.mcpu.191909026" name="Microcontroller" superClass="com.atollic.truestudio.common_options.target.mcpu" value="STM32L476VG" valueType="enumerated" />
@@ -114,11 +119,12 @@
 						</tool>
 					</fileInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup" />
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares" />
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers" />
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src" />
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc" />
+						<entry excluding="libspeex/vbr.c|libspeex/testenc.c|libspeex/testenc_wb.c|libspeex/testenc_uwb.c|libspeex/testecho.c|libspeex/testdenoise.c|libspeex/stereo.c|libspeex/smallft.c|libspeex/sb_celp.c|libspeex/resample.c|libspeex/preprocess.c|libspeex/modes_wb.c|libspeex/mdf.c|libspeex/kiss_fftr.c|libspeex/kiss_fft.c|libspeex/jitter.c|libspeex/hexc_table.c|libspeex/hexc_10_32_table.c|libspeex/filterbank.c|libspeex/fftwrap.c|libspeex/exc_8_128_table.c|libspeex/exc_5_64_table.c|libspeex/exc_5_256_table.c|libspeex/exc_20_32_table.c|libspeex/exc_10_16_table.c|STM32/libspeex/arm|STM32/libspeex/iar" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Speex_Lib" />
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src" />
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup" />
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -144,7 +150,7 @@
 							<option id="com.atollic.truestudio.toolchain_options.mcu.1806053856" name="Microcontroller" superClass="com.atollic.truestudio.toolchain_options.mcu" value="STM32L476VG" valueType="string" />
 							<option id="com.atollic.truestudio.toolchain_options.vendor.1339690351" name="Vendor name" superClass="com.atollic.truestudio.toolchain_options.vendor" value="STMicroelectronics" valueType="string" />
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="com.atollic.truestudio.exe.release.toolchain.platform.2054752829" isAbstract="false" name="Release platform" superClass="com.atollic.truestudio.exe.release.toolchain.platform" />
-							<builder buildPath="${workspace_loc:/audio_point}/Release" customBuilderProperties="toolChainpathString=C:\\Program Files (x86)\\Atollic\\TrueSTUDIO for STM32 9.0.0\\ARMTools\\bin|toolChainpathType=1|" id="com.atollic.truestudio.mbs.builder1.1222194476" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CDT Internal Builder" superClass="com.atollic.truestudio.mbs.builder1">
+							<builder buildPath="${workspace_loc:/audio_point}/Release" customBuilderProperties="toolChainpathType=1|toolChainpathString=C:\\Program Files (x86)\\Atollic\\TrueSTUDIO for STM32 9.0.0\\ARMTools\\bin|" id="com.atollic.truestudio.mbs.builder1.1222194476" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CDT Internal Builder" superClass="com.atollic.truestudio.mbs.builder1">
 								<outputEntries>
 									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="Release" />
 								</outputEntries>
@@ -166,17 +172,23 @@
 									<listOptionValue builtIn="false" value="../Inc" />
 									<listOptionValue builtIn="false" value="../Drivers/STM32L4xx_HAL_Driver/Inc" />
 									<listOptionValue builtIn="false" value="../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy" />
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include" />
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS" />
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F" />
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32L4xx/Include" />
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include" />
-								</option>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/include}&quot;" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/libspeex}&quot;" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/STM32}&quot;" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/STM32/include}&quot;" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Speex_Lib/STM32/libspeex/gcc}&quot;" />
+									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F}&quot;" />
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/AUDIO_POINT/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS}&quot;" />
+								<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS" /></option>
 								<option id="com.atollic.truestudio.gcc.symbols.defined.1670122205" name="Defined symbols" superClass="com.atollic.truestudio.gcc.symbols.defined" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__weak=__attribute__((weak))" />
 									<listOptionValue builtIn="false" value="__packed=__attribute__((__packed__))" />
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32L476xx" />
+									<listOptionValue builtIn="false" value="HAVE_CONFIG_H" />
 								</option>
 								<option id="com.atollic.truestudio.common_options.target.endianess.1854274048" name="Endianess" superClass="com.atollic.truestudio.common_options.target.endianess" value="com.atollic.truestudio.common_options.target.endianess.little" valueType="enumerated" />
 								<option id="com.atollic.truestudio.common_options.target.mcpu.191909026" name="Microcontroller" superClass="com.atollic.truestudio.common_options.target.mcpu" value="STM32L476VG" valueType="enumerated" />
@@ -230,7 +242,7 @@
 								<option id="com.atollic.truestudio.common_options.target.fpucore.1297069055" name="FPU" superClass="com.atollic.truestudio.common_options.target.fpucore" value="com.atollic.truestudio.common_options.target.fpucore.fpv4-sp-d16" valueType="enumerated" />
 							</tool>
 							<tool id="com.atollic.truestudio.exe.release.toolchain.secoutput.839033486" name="Other" superClass="com.atollic.truestudio.exe.release.toolchain.secoutput">
-								<option id="com.atollic.truestudio.secoutput.general.convert.192424657" superClass="com.atollic.truestudio.secoutput.general.convert" useByScannerDiscovery="false" value="true" valueType="boolean" />
+								<option id="com.atollic.truestudio.secoutput.general.convert.192424657" name="Convert build output" superClass="com.atollic.truestudio.secoutput.general.convert" useByScannerDiscovery="false" value="true" valueType="boolean" />
 							</tool>
 							<tool id="com.atollic.truestudio.ar.base.28125843" name="Archiver" superClass="com.atollic.truestudio.ar.base" />
 						</toolChain>
@@ -241,11 +253,12 @@
 						</tool>
 					</fileInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup" />
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares" />
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers" />
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src" />
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc" />
+						<entry excluding="libspeex/vbr.c|libspeex/testenc.c|libspeex/testenc_wb.c|libspeex/testenc_uwb.c|libspeex/testecho.c|libspeex/testdenoise.c|libspeex/stereo.c|libspeex/smallft.c|libspeex/sb_celp.c|libspeex/resample.c|libspeex/preprocess.c|libspeex/modes_wb.c|libspeex/mdf.c|libspeex/kiss_fftr.c|libspeex/kiss_fft.c|libspeex/jitter.c|libspeex/hexc_table.c|libspeex/hexc_10_32_table.c|libspeex/filterbank.c|libspeex/fftwrap.c|libspeex/exc_8_128_table.c|libspeex/exc_5_64_table.c|libspeex/exc_5_256_table.c|libspeex/exc_20_32_table.c|libspeex/exc_10_16_table.c|STM32/libspeex/arm|STM32/libspeex/iar" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Speex_Lib" />
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src" />
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup" />
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -257,7 +270,16 @@
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="audio_point.com.atollic.truestudio.exe.1549124020" name="Executable" projectType="com.atollic.truestudio.exe" />
 	</storageModule>
-	<storageModule moduleId="refreshScope" />
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="audio_point" />
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/AUDIO_POINT" />
+		</configuration>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets" />
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders" />
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="" />
 		<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
@@ -296,7 +318,31 @@
 				</scannerInfoProvider>
 			</profile>
 		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.atollic.truestudio.exe.release.1518366166;com.atollic.truestudio.exe.release.1518366166.2031504340;com.atollic.truestudio.exe.release.toolchain.gcc.1836874447;com.atollic.truestudio.gcc.input.850396938">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.atollic.truestudio.mbs.ARMToolsPerProjectProfileC" />
+			<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath="" />
+					<parser enabled="true" />
+				</buildOutputProvider>
+				<scannerInfoProvider id="makefileGenerator">
+					<runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true" />
+					<parser enabled="true" />
+				</scannerInfoProvider>
+			</profile>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.atollic.truestudio.exe.debug.1518366166;com.atollic.truestudio.exe.debug.1518366166.2031504340;com.atollic.truestudio.exe.debug.toolchain.gcc.1836874447;com.atollic.truestudio.gcc.input.850396938">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.atollic.truestudio.mbs.ARMToolsPerProjectProfileC" />
+			<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+				<buildOutputProvider>
+					<openAction enabled="true" filePath="" />
+					<parser enabled="true" />
+				</buildOutputProvider>
+				<scannerInfoProvider id="makefileGenerator">
+					<runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true" />
+					<parser enabled="true" />
+				</scannerInfoProvider>
+			</profile>
+		</scannerConfigBuildInfo>
 	</storageModule>
-	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets" />
-	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders" />
 </cproject>
