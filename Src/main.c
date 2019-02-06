@@ -51,6 +51,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "can.h"
 #include "dfsdm.h"
 #include "dma.h"
 #include "sai.h"
@@ -130,6 +131,7 @@ int main(void)
   MX_DMA_Init();
   MX_DFSDM1_Init();
   MX_SAI1_Init();
+  MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
