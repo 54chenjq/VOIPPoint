@@ -86,7 +86,14 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
+uint32_t pause_cnt = 0;
+
 unsigned char micr_gain = 50;
+
+unsigned short device_id = 0x02;
+unsigned short gate_id = 0xFE;
+unsigned short point_to_point_tmr = 0x00;
+unsigned char to_id = 0xFF;
 
 #define BUF_LENGTH	3
 
@@ -185,7 +192,7 @@ static void initCANFilter() {
 
 static void send_frame(uint8_t num, uint8_t *ptr) {
 	static uint32_t i;
-	TxHeader.StdId = 0x0001;
+	TxHeader.StdId = device_id;
 	TxHeader.ExtId = 0;
 	TxHeader.RTR = CAN_RTR_DATA;
 	TxHeader.IDE = CAN_ID_STD;
@@ -206,9 +213,10 @@ static void send_frame(uint8_t num, uint8_t *ptr) {
 		HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 		break;
 	case 3:
-		TxHeader.DLC = 0x07;
+		TxHeader.DLC = 0x08;
 		TxData[0] = 0x03;
 		for(i=0;i<6;i++) TxData[i+1] = ptr[i+14];
+		TxData[7] = to_id;
 		//while(HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0) {osDelay(1);}
 		HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox);
 		break;
@@ -294,11 +302,11 @@ void StartDefaultTask(void const * argument)
   for(;;)
   {
 	  	  if(DmaRecHalfBuffCplt == 1) {
-	  		  //for(i=0;i<FRAME_SIZE;i++) {micr_data[0][i] = SaturaLH((RecBuf[0][i] >>8), -32768, 32767)*(int32_t)micr_gain/100;}
-	  		  for(i=0;i<FRAME_SIZE;i++) {
+	  		  for(i=0;i<FRAME_SIZE;i++) {micr_data[0][i] = SaturaLH((RecBuf[0][i] >>8), -32768, 32767)*(int32_t)micr_gain/100;}
+	  		  /*for(i=0;i<FRAME_SIZE;i++) {
 	  			  micr_data[0][i] = (int16_t)((uint16_t)wav_ex[wav_pos]<<8 | wav_ex[wav_pos+1])*(int32_t)micr_gain/100;
 	  			  wav_pos+=2;if(wav_pos>=EX_SIZE) wav_pos=0;
-	  		  }
+	  		  }*/
 
 	  		  encode_frame(&micr_data[0][0],&microphone_encoded_data[0][0]);
 	  		  encoded_micr_ready_buf_num = 1;
@@ -309,11 +317,11 @@ void StartDefaultTask(void const * argument)
 	  	  }
 	  	  if(DmaRecBuffCplt == 1)
 	  	  {
-	  		  //for(i=0;i<FRAME_SIZE;i++) {micr_data[1][i] = SaturaLH((RecBuf[1][i] >>8), -32768, 32767)*(int32_t)micr_gain/100;}
-	  		  for(i=0;i<FRAME_SIZE;i++) {
+	  		  for(i=0;i<FRAME_SIZE;i++) {micr_data[1][i] = SaturaLH((RecBuf[1][i] >>8), -32768, 32767)*(int32_t)micr_gain/100;}
+	  		  /*for(i=0;i<FRAME_SIZE;i++) {
 	  			  micr_data[1][i] = (int16_t)((uint16_t)wav_ex[wav_pos]<<8 | wav_ex[wav_pos+1])*(int32_t)micr_gain/100;
 	  			  wav_pos+=2;if(wav_pos>=EX_SIZE) wav_pos=0;
-	  		  }
+	  		  }*/
 
 	  		  encode_frame(&micr_data[1][0],&microphone_encoded_data[1][0]);
 	  		  encoded_micr_ready_buf_num = 2;
@@ -339,17 +347,24 @@ void StartDecodeTask(void const * argument)
   /* Infinite loop */
   uint32_t i;
   uint8_t buf_num = 0;
-  uint32_t pause_cnt = 0;
   for(;;)
   {
+
 	  if(frame_ready) {
 		  pause_cnt = 0;
 		  frame_ready=0;
 		  decode_frame((char*)&can_frame[0],&audio_stream[0]);
 		  buf_num = frame_num%BUF_LENGTH;
+
 		  for(i=0;i<FRAME_SIZE;i++) {
-			  PlayBuf[buf_num][2*(FRAME_SIZE-1-i)] = audio_stream[FRAME_SIZE-1-i];
-			  PlayBuf[buf_num][2*(FRAME_SIZE-1-i)+1] = PlayBuf[buf_num][2*(FRAME_SIZE-1-i)];
+			  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) {
+				  PlayBuf[buf_num][2*(FRAME_SIZE-1-i)] = 0;
+				  PlayBuf[buf_num][2*(FRAME_SIZE-1-i)+1] = 0;
+			  }else {
+				  PlayBuf[buf_num][2*(FRAME_SIZE-1-i)] = audio_stream[FRAME_SIZE-1-i];
+				  PlayBuf[buf_num][2*(FRAME_SIZE-1-i)+1] = PlayBuf[buf_num][2*(FRAME_SIZE-1-i)];
+			  }
+
 		  }
 		  frame_num++;
 		  HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin);
@@ -396,20 +411,10 @@ void StartCanTask(void const * argument)
 		  }
 		  encoded_micr_ready_buf_num=0;
 	  }
-	  /*if(HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0)) {
-
-		  if(HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK) {
-			  if(RxData[0]==1) {for(i=0;i<7;i++) can_frame[i]=RxData[i+1];}
-			  else if(RxData[0]==2) {for(i=0;i<7;i++) can_frame[i+7]=RxData[i+1];}
-			  else if(RxData[0]==3) {
-				  for(i=0;i<6;i++) can_frame[i+14]=RxData[i+1];
-				  frame_ready=1;
-				  HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin);
-			  }
-
-		  }
-	  }*/
 	  osDelay(1);
+
+	  if(point_to_point_tmr) point_to_point_tmr--;
+	  else to_id = 0xFF; // send data to all
   }
   /* USER CODE END StartCanTask */
 }
@@ -436,8 +441,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		  if(RxData[0]==1) {for(i=0;i<7;i++) can_frame[i]=RxData[i+1];}
 		  else if(RxData[0]==2) {for(i=0;i<7;i++) can_frame[i+7]=RxData[i+1];}
 		  else if(RxData[0]==3) {
-			  for(i=0;i<6;i++) can_frame[i+14]=RxData[i+1];
-			  frame_ready=1;
+			  if(RxData[7]==device_id) {
+				  to_id = RxHeader.StdId;
+				  point_to_point_tmr = 3000;
+				  for(i=0;i<6;i++) can_frame[i+14]=RxData[i+1];
+				  frame_ready=1;
+			  }else if(RxData[7]==0xFF) {
+				  for(i=0;i<6;i++) can_frame[i+14]=RxData[i+1];
+				  to_id = 0xFF;
+				  frame_ready=1;
+			  }
 		  }
 	  }
   }
