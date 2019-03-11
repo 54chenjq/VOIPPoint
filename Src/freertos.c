@@ -231,6 +231,25 @@ void StartCanTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
+/* Hook prototypes */
+void vApplicationIdleHook(void);
+
+/* USER CODE BEGIN 2 */
+__weak void vApplicationIdleHook( void )
+{
+   /* vApplicationIdleHook() will only be called if configUSE_IDLE_HOOK is set
+   to 1 in FreeRTOSConfig.h. It will be called on each iteration of the idle
+   task. It is essential that code added to this hook function never attempts
+   to block in any way (for example, call xQueueReceive() with a block time
+   specified, or call vTaskDelay()). If the application makes use of the
+   vTaskDelete() API function (as this demo application does) then it is also
+   important that vApplicationIdleHook() is permitted to return to its calling
+   function, because it is the responsibility of the idle task to clean up
+   memory allocated by the kernel to any task that has since been deleted. */
+	HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+}
+/* USER CODE END 2 */
+
 /**
   * @brief  FreeRTOS initialization
   * @param  None
@@ -302,13 +321,15 @@ void StartDefaultTask(void const * argument)
   for(;;)
   {
 	  	  if(DmaRecHalfBuffCplt == 1) {
-	  		  for(i=0;i<FRAME_SIZE;i++) {micr_data[0][i] = SaturaLH((RecBuf[0][i] >>8), -32768, 32767)*(int32_t)micr_gain/100;}
-	  		  /*for(i=0;i<FRAME_SIZE;i++) {
+	  		  //for(i=0;i<FRAME_SIZE;i++) {micr_data[0][i] = SaturaLH((RecBuf[0][i] >>8), -32768, 32767)*(int32_t)micr_gain/100;}
+	  		  for(i=0;i<FRAME_SIZE;i++) {
 	  			  micr_data[0][i] = (int16_t)((uint16_t)wav_ex[wav_pos]<<8 | wav_ex[wav_pos+1])*(int32_t)micr_gain/100;
 	  			  wav_pos+=2;if(wav_pos>=EX_SIZE) wav_pos=0;
-	  		  }*/
+	  		  }
 
+	  		  HAL_GPIO_WritePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin,GPIO_PIN_SET);
 	  		  encode_frame(&micr_data[0][0],&microphone_encoded_data[0][0]);
+	  		  HAL_GPIO_WritePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin,GPIO_PIN_RESET);
 	  		  encoded_micr_ready_buf_num = 1;
 
 	  		  DmaRecHalfBuffCplt  = 0;
@@ -317,13 +338,15 @@ void StartDefaultTask(void const * argument)
 	  	  }
 	  	  if(DmaRecBuffCplt == 1)
 	  	  {
-	  		  for(i=0;i<FRAME_SIZE;i++) {micr_data[1][i] = SaturaLH((RecBuf[1][i] >>8), -32768, 32767)*(int32_t)micr_gain/100;}
-	  		  /*for(i=0;i<FRAME_SIZE;i++) {
+	  		  //for(i=0;i<FRAME_SIZE;i++) {micr_data[1][i] = SaturaLH((RecBuf[1][i] >>8), -32768, 32767)*(int32_t)micr_gain/100;}
+	  		  for(i=0;i<FRAME_SIZE;i++) {
 	  			  micr_data[1][i] = (int16_t)((uint16_t)wav_ex[wav_pos]<<8 | wav_ex[wav_pos+1])*(int32_t)micr_gain/100;
 	  			  wav_pos+=2;if(wav_pos>=EX_SIZE) wav_pos=0;
-	  		  }*/
+	  		  }
 
+	  		  HAL_GPIO_WritePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin,GPIO_PIN_SET);
 	  		  encode_frame(&micr_data[1][0],&microphone_encoded_data[1][0]);
+	  		  HAL_GPIO_WritePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin,GPIO_PIN_RESET);
 	  		  encoded_micr_ready_buf_num = 2;
 
 	  		  DmaRecBuffCplt  = 0;
@@ -367,7 +390,7 @@ void StartDecodeTask(void const * argument)
 
 		  }
 		  frame_num++;
-		  HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin);
+		  //HAL_GPIO_TogglePin(GREEN_LED_GPIO_Port,GREEN_LED_Pin);
 	  }else {
 		  pause_cnt++;
 		  if(pause_cnt>=30) {
@@ -396,6 +419,7 @@ void StartCanTask(void const * argument)
 {
   /* USER CODE BEGIN StartCanTask */
   /* Infinite loop */
+  static unsigned char button_state = 0;
   initCANFilter();
   HAL_CAN_Start(&hcan1);
   if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
@@ -403,6 +427,10 @@ void StartCanTask(void const * argument)
   }
   for(;;)
   {
+	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0)!=button_state) {
+		  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) HAL_CAN_DeactivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+		  else HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+	  }
 	  if(encoded_micr_ready_buf_num) {
 		  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) {
 			  send_frame(1,(unsigned char*)&microphone_encoded_data[encoded_micr_ready_buf_num-1][0]);
@@ -411,6 +439,7 @@ void StartCanTask(void const * argument)
 		  }
 		  encoded_micr_ready_buf_num=0;
 	  }
+	  button_state = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
 	  osDelay(1);
 
 	  if(point_to_point_tmr) point_to_point_tmr--;
